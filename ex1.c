@@ -62,7 +62,7 @@ void history(struct CommandStruct commands[100], int sizeCommands){
     while (i <= sizeCommands)
     {
         printf("%s ", commands[i].jobFullName);
-        if (commands[i].DoneOrRunnig == 0)
+        if ((commands[i].DoneOrRunnig == 0) && ((waitpid(commands[i].PidOfChild, NULL, WNOHANG) == 0) || (i == sizeCommands)))
         {
             printf("RUNNING\n");
         } else {
@@ -117,16 +117,40 @@ void builtIn(struct CommandStruct commands, char * str){
         }
         i++;
     }
-    
-    if(execvp(exep[0], exep) == -1){
-        printf("exec failed\n");
-        exitWin();
-    }
-    i = 0;
-    while (i<100)
+    /**if (commands.InBackground)
     {
-       exep[i] = NULL;
-    }
+        pid_t pid2 = fork();
+        if (pid2==0)
+        {
+            if(execvp(exep[0], exep) == -1){
+                printf("exec failed\n");
+                exitWin();
+            }
+            i = 0;
+            while (i<100)
+            {
+                exep[i] = NULL;
+            }
+        } else {
+            waitpid(pid2, NULL , 0);
+            commands.DoneOrRunnig = 1;
+            exitWin();
+        }  
+    } else {*/
+        if(execvp(exep[0], exep) == -1){
+            printf("exec failed\n");
+            exitWin();
+        }
+        i = 0;
+        while (i<100)
+        {
+            exep[i] = NULL;
+        }
+    //}
+    
+
+
+    
 }
 
 void cd(struct CommandStruct commands){
@@ -202,14 +226,7 @@ int main(){
             {
                 waitpid(pid, NULL , 0);
                 commands[curCommand].DoneOrRunnig = 1;
-            } else {
-                pid_t pid2 = fork();
-                if (pid2 == 0){
-                    waitpid(commands[curCommand].PidOfChild, NULL , WNOHANG);
-                    commands[curCommand].DoneOrRunnig = 1;
-                    exitWin();
-                }
-            }
+            } 
         }
         /**
         printf("%s\n", commands[curCommand].Name);
