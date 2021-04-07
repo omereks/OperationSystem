@@ -50,7 +50,7 @@ void jobs(struct CommandStruct commands[100], int sizeCommands){
     {
         if ((commands[i].DoneOrRunnig == 0) && ((commands[i].InBackground == 1)))
         {
-            printf("%s\n", commands[i].Name);
+            printf("%s\n", commands[i].jobFullName);
         }
         i++;
     }
