@@ -82,6 +82,10 @@ void splitString(char * str, char  strRet[100][100]){
     while (i<=(strlen(str)))
     {
         // if space or NULL found, assign NULL into newString[ctr]
+        if((str[i] == '\"') || (str[i] == '\'')){
+            i++;
+            continue;
+        }
         if(str[i]==' '||str[i]=='\0')
         {
             strRet[ctr][j]='\0';
