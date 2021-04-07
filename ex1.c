@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -10,7 +11,7 @@
 
 struct CommandStruct {
     char Name[100];
-    //char jobFullName[100];
+    char jobFullName[100];
     int DoneOrRunnig;
     int InBackground;
     pid_t PidOfChild;
@@ -44,64 +45,96 @@ char * lastWord(char* str){
 }
 
 void jobs(struct CommandStruct commands[100], int sizeCommands){
-    for (int i = 0; i <= sizeCommands ; i++)
+    int i =0;
+    while (i <= sizeCommands)
     {
         if ((commands[i].DoneOrRunnig == 0) && ((commands[i].InBackground == 1)))
         {
             printf("%s\n", commands[i].Name);
-            fflush(stdout);
         }
+        i++;
     }
     commands[sizeCommands].DoneOrRunnig = 1;
 }
 
 void history(struct CommandStruct commands[100], int sizeCommands){
-    for (int i = 0; i <= sizeCommands ; i++)
+    int i = 0;
+    while (i <= sizeCommands)
     {
-        printf("%s ", commands[i].Name);
+        printf("%s ", commands[i].jobFullName);
         if (commands[i].DoneOrRunnig == 0)
         {
             printf("RUNNING\n");
-            fflush(stdout);
         } else {
             printf("DONE\n");
-            fflush(stdout);
         }
+        i++;
     }
+    
     commands[sizeCommands].DoneOrRunnig = 1;
 }
 
-void builtIn(struct CommandStruct commands, char * str){
-    char ** words = splitString(str);
-    printf("%s", words[strln(words)-1]);
-    /**
-    args[0]=”ls”;
-    args[1]=”-l”;
-    args[2]=NULL;
-    execv
-    */
-}
-char** splitString(char * str){
+void splitString(char * str, char  strRet[100][100]){
     int j=0; 
     int ctr=0;
-    char** newString;
-    for(int i=0;i<=(strlen(str));i++)
+    //char newString[100][100];
+    int i =0;
+    while (i<=(strlen(str)))
     {
         // if space or NULL found, assign NULL into newString[ctr]
         if(str[i]==' '||str[i]=='\0')
         {
-            newString[ctr][j]='\0';
+            strRet[ctr][j]='\0';
             ctr++;  //for next word
             j=0;    //for next word, init index to 0
         }
         else
         {
-            newString[ctr][j]=str[i];
+            strRet[ctr][j]=str[i];
             j++;
         }
+        i++;
     }
-    return newString;
 }
+
+
+void builtIn(struct CommandStruct commands, char * str){
+    char words[100][100];
+    splitString(str ,words);
+    int i = 0;
+    int j =0;
+    char * exep[100]; 
+
+    while (i<100)
+    {
+        if ((!(strcmp(words[i],"\0"))) || (words[i][0] == '&')){
+            exep[i] = NULL;
+            i=100;
+        }
+        else {
+            exep[i] = words[j];
+            j++;
+        }
+        i++;
+    }
+    
+    if(execvp(exep[0], exep) == -1){
+        printf("exec failed\n");
+        exitWin();
+    }
+    i = 0;
+    while (i<100)
+    {
+       exep[i] = NULL;
+    }
+}
+
+void cd(struct CommandStruct commands){
+
+}
+
+
+
 int main(){
 
     struct CommandStruct  commands[100];
@@ -119,16 +152,24 @@ int main(){
 
         //build the current Command 
         //name
-        strcpy(commands[curCommand].Name , firstWord(commandInput));
+        strcpy(commands[curCommand].Name , firstWord(commandInput));     
         //status
         commands[curCommand].DoneOrRunnig = 0;
         //Background
         commands[curCommand].DoneOrRunnig = 0;
+        
         if(strcmp("&", lastWord(commandInput)) == 0){
             commands[curCommand].InBackground = 1;
         } else {
             commands[curCommand].InBackground = 0;
         }
+        //Full Name
+        strcpy(commands[curCommand].jobFullName,commandInput);
+        if (commands[curCommand].InBackground)
+        {
+            commands[curCommand].jobFullName[strlen(commands[curCommand].jobFullName) - 2] = '\0';
+        } 
+        
 
         //jobs
         if (strcmp(commands[curCommand].Name, "jobs") == 0)
@@ -143,13 +184,33 @@ int main(){
         //cd
         else if (strcmp(commands[curCommand].Name, "cd") == 0)
         {
-            //cd(commands, curCommand);
+            cd(commands[curCommand]);
+        }
+        else if (strcmp(commands[curCommand].Name, "exit") == 0)
+        {
+            exitWin();
         }
         else
         {
-            builtIn(commands[curCommand], commandInput);
+            pid_t pid = fork();
+            commands[curCommand].PidOfChild = pid;
+            if (pid == 0)
+            {
+                builtIn(commands[curCommand], commandInput);
+            }
+            if (!commands[curCommand].InBackground)
+            {
+                waitpid(pid, NULL , 0);
+                commands[curCommand].DoneOrRunnig = 1;
+            } else {
+                pid_t pid2 = fork();
+                if (pid2 == 0){
+                    waitpid(commands[curCommand].PidOfChild, NULL , WNOHANG);
+                    commands[curCommand].DoneOrRunnig = 1;
+                    exitWin();
+                }
+            }
         }
-        
         /**
         printf("%s\n", commands[curCommand].Name);
         printf("%d\n", commands[curCommand].DoneOrRunnig);
