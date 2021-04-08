@@ -273,7 +273,7 @@ int main(){
         {
             exitWin();
         }
-        else
+        else // execv 
         {
             pid_t pid;
             if ((pid = fork()) < 0)
@@ -292,14 +292,7 @@ int main(){
                 commands[curCommand].DoneOrRunnig = 1;
             } 
         }
-        /**
-        printf("%s\n", commands[curCommand].Name);
-        printf("%d\n", commands[curCommand].DoneOrRunnig);
-        printf("%d\n", commands[curCommand].InBackground);
-        */
 
         curCommand++;
-
     }
-    
 }
