@@ -82,7 +82,7 @@ void splitString(char * str, char  strRet[100][100]){
     while (i<=(strlen(str)))
     {
         // if space or NULL found, assign NULL into newString[ctr]
-        if((str[i] == '\"') || (str[i] == '\'')){
+        if(str[i] == '\"'){
             i++;
             continue;
         }
@@ -121,26 +121,6 @@ void builtIn(struct CommandStruct commands, char * str){
         }
         i++;
     }
-    /**if (commands.InBackground)
-    {
-        pid_t pid2 = fork();
-        if (pid2==0)
-        {
-            if(execvp(exep[0], exep) == -1){
-                printf("exec failed\n");
-                exitWin();
-            }
-            i = 0;
-            while (i<100)
-            {
-                exep[i] = NULL;
-            }
-        } else {
-            waitpid(pid2, NULL , 0);
-            commands.DoneOrRunnig = 1;
-            exitWin();
-        }  
-    } else {*/
         if(execvp(exep[0], exep) == -1){
             printf("exec failed\n");
             exitWin();
@@ -158,7 +138,91 @@ void builtIn(struct CommandStruct commands, char * str){
 }
 
 void cd(struct CommandStruct commands){
+    char Path[100];
+    char prevPath[100];
+    char words[100][100];
+    splitString(commands.jobFullName ,words);
+    if (strcmp(words[2],"\0"))
+    {
+        printf("Too many argument\n");
+        return;
+    }
 
+    if (strcmp(words[1],"\0") == 0)
+    {
+        if (chdir(getenv("HOME"))<0)
+        {
+            printf("chdir failed\n");
+        }
+        strcpy(getenv("HOME"), prevPath);
+    }
+    
+    //if (chdir(getenv("HOME")) <0){
+      //  printf("chdir failed\n");
+    //}
+
+    if (getcwd(Path, sizeof(Path)) == NULL) 
+        printf("An error occurred\n");
+    
+    
+
+
+
+    if ((strcmp(words[1] , "/") == 0) || (strcmp(words[1] , "--") == 0))
+    {
+        if (chdir(getenv("HOME")) <0){
+            printf("chdir failed\n");
+        }
+        strcpy(getenv("HOME"), prevPath);
+    }
+
+    if (words[1][0]=='/')
+    {
+        if (chdir(words[1])<0)
+        {
+            printf("chdir failed\n");
+        }
+        strcpy(words[1], prevPath);
+    }
+
+    if ((strcmp(words[1] , "~") == 0) || (strcmp(words[1] , "~/") == 0))
+    {
+        if (chdir(getenv("HOME"))<0)
+        {
+            printf("chdir failed\n");
+        }
+        strcpy(getenv("HOME"), prevPath);
+    } else if (words[1][0]=='~')
+    {
+        memmove(words[1], words[1]+1, strlen(words[1]));
+        if (chdir(words[1])<0)
+        {
+            printf("chdir failed\n");
+        }
+        strcpy(words[1], prevPath);
+    }
+
+    if((words[1][0]=='-'))
+    {
+        memmove(words[1], words[1]+1, strlen(words[1]));
+        if ((chdir(prevPath)<0) && (chdir(words[1])<0))
+        {
+            printf("chdir failed\n");
+        }
+    }
+
+    
+    
+
+
+    
+    
+
+    //cd = chdir(retPath);
+
+
+    //printf("%s\n", Path);printf("%s\n", retPath);
+    
 }
 
 
