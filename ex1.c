@@ -8,7 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 
-
+//struct of command
 struct CommandStruct {
     char Name[100];
     char jobFullName[100];
@@ -17,11 +17,12 @@ struct CommandStruct {
     pid_t PidOfChild;
 };
 
+//exit built in
 void exitWin(){
     exit(0);
 }
 
-
+// gets the first word in the input
 char * firstWord(char* str){
     char delimiter[] = " ";
     char * context;
@@ -30,9 +31,9 @@ char * firstWord(char* str){
     strncpy(cpInput, str, inputLength);
     char * firstWord = strtok_r (cpInput, delimiter, &context);
     return firstWord;
-
 }
 
+// gets the last word in the input
 char * lastWord(char* str){
     char *word = strrchr(str, ' ');    
     //check if it no null  - have only one word
@@ -44,6 +45,7 @@ char * lastWord(char* str){
     return word;
 }
 
+// job build in
 void jobs(struct CommandStruct commands[100], int sizeCommands){
     int i =0;
     while (i <= sizeCommands)
@@ -57,11 +59,13 @@ void jobs(struct CommandStruct commands[100], int sizeCommands){
     commands[sizeCommands].DoneOrRunnig = 1;
 }
 
+// history build in
 void history(struct CommandStruct commands[100], int sizeCommands){
     int i = 0;
     while (i <= sizeCommands)
     {
         printf("%s ", commands[i].jobFullName);
+        // or done or last one (currnt job)
         if ((commands[i].DoneOrRunnig == 0) && ((waitpid(commands[i].PidOfChild, NULL, WNOHANG) == 0) || (i == sizeCommands)))
         {
             printf("RUNNING\n");
@@ -101,7 +105,7 @@ void splitString(char * str, char  strRet[100][100]){
     }
 }
 
-
+// other jobs in execv
 void builtIn(struct CommandStruct commands, char * str){
     char words[100][100];
     splitString(str ,words);
@@ -109,6 +113,7 @@ void builtIn(struct CommandStruct commands, char * str){
     int j =0;
     char * exep[100]; 
 
+    // build the char[] for the execvp
     while (i<100)
     {
         if ((!(strcmp(words[i],"\0"))) || (words[i][0] == '&')){
@@ -121,76 +126,19 @@ void builtIn(struct CommandStruct commands, char * str){
         }
         i++;
     }
-        if(execvp(exep[0], exep) == -1){
-            printf("exec failed\n");
-            exitWin();
-        }
-        i = 0;
-        while (i<100)
-        {
-            exep[i] = NULL;
-        }
-    //}
-    
-
-
-    
-}
-
-int cdDelLast(char* word) {
-	int i = strlen(word)-1;
-    while (i>=0)
-    {
-        if (word[i] == '/') {
-			word[i] = '\0';
-			if(!strcmp(word,"")){
-				strcpy(word,"/");
-			}
-			return chdir(word);
-		}
-        i--;
+    //run the execvp
+    if(execvp(exep[0], exep) == -1){
+        printf("exec failed\n");
+        exitWin();
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//split to tokens for cd
 int getTokens(char **currentJob, char *input) {
     char *token;
     char cpInput[100];
     strcpy(cpInput, input);
-    int commandLen, i = 0;
+    int size, i = 0;
     token = strtok(cpInput, " ");
     currentJob[0] = token;
 
@@ -200,16 +148,16 @@ int getTokens(char **currentJob, char *input) {
     {
         currentJob[i] = token;
         token = strtok(NULL, " ");
-        commandLen = i;
+        size = i;
         i++;
     }
    
     
-    return commandLen;
+    return size;
 }
 
 
-
+// check dor cases in cd - help for cd
 void cdHelp(char *path, char prevPath[100]) {
     char curPath[100];
     if (strcmp(path, "-") == 0) { // only -
@@ -232,191 +180,36 @@ void cdHelp(char *path, char prevPath[100]) {
     }
 }
 
-//cd built-in command implantation
-void cd(char *path, int commandLen, char prevPath[100]) {
+//build in cd
+void cd(char *path, int size, char prevPath[100]) {
     char curPath[100];
     if (getcwd(curPath, sizeof(curPath)) == NULL) {
         printf("An error occurred\n");
-    } else {
-        if(commandLen == 0) {
-            if (chdir(getenv("HOME")) < 0) {
-                printf("chdir failed\n");
-            } else {
-                strcpy(prevPath, curPath);
-            }
-        } else if (commandLen > 1) {
-            printf("Too many arguments\n");
+        return;
+    } 
+    if(size == 0) { //only cd
+        if (chdir(getenv("HOME")) < 0) {
+            printf("chdir failed\n");
         } else {
-            cdHelp(path, prevPath);
-            if ((chdir(path)) < 0) {
-                printf("chdir failed\n");
-            } else {
-                strcpy(prevPath, curPath);
-            }
+            strcpy(prevPath, curPath);
         }
+        return;
     }
+    if (size > 1) {// more then alowed args
+        printf("Too many arguments\n");
+        return;
+    } 
+
+    // ok
+    cdHelp(path, prevPath);
+    if ((chdir(path)) < 0) {
+        printf("chdir failed\n");
+    } else {
+        strcpy(prevPath, curPath);
+    }
+    
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
-char* cd(struct CommandStruct commands, char prevPath[100]){
-    char Path[100];
-    //char prevPath[100];
-    char words[100][100];
-    char temp[100];
-    //strcpy(prevPath, pPath);
-    splitString(commands.jobFullName ,words);
-    if (strcmp(words[2],"\0"))
-    {
-        printf("Too many argument\n");
-        return prevPath;
-    }
-
-
-    //cd
-
-    if ((strcmp(words[1],"\0") == 0))
-    {
-        strcpy(prevPath, getcwd(Path, sizeof(Path)));
-        if ((chdir(getenv("HOME"))<0) && (strcmp("" , getenv("HOME")) != 0))
-        {
-            printf("chdir failed\n");
-        }
-    }
-    
-
-
-    if (strlen(words[1]) ==1)
-    {
-        // /
-        if (strcmp(words[1] , "/") == 0)
-        {
-            strcpy(prevPath, getcwd(Path, sizeof(Path)));
-            if (chdir(getenv("HOME")) <0){
-                printf("chdir failed\n");
-            }
-        } 
-
-        // ~
-        if (strcmp(words[1] , "~") == 0)
-        {
-            strcpy(prevPath, getcwd(Path, sizeof(Path)));
-            if (chdir(getenv("HOME"))<0)
-            {
-                printf("chdir failed\n");
-            }
-        } 
-
-        // -
-        if((strcmp(words[1] , "-") == 0))
-        {
-            strcpy(temp, getcwd(Path, sizeof(Path)));
-            if ((chdir(prevPath)<0) && (strcmp(prevPath, getcwd(Path, sizeof(Path)))== 0))
-            {
-                printf("chdir failed\n");
-            }
-            strcpy(prevPath, temp);
-        }
-
-    }
-
-    else if (strlen(words[1]) ==2){
-        // --
-        if (strcmp(words[1] , "--") == 0)
-        {
-            strcpy(prevPath, getcwd(Path, sizeof(Path)));
-            if (chdir(getenv("HOME")) <0){
-                printf("chdir failed\n");
-            }
-        }  
-        // ~/
-        if ((strcmp(words[1] , "~/") == 0))
-        {
-            strcpy(prevPath, getcwd(Path, sizeof(Path)));
-            if (chdir(getenv("HOME"))<0)
-            {
-                printf("chdir failed\n");
-            }
-        } 
-
-        // ..
-        if((strcmp(words[1] , "..") == 0))
-        {
-            strcpy(prevPath, getcwd(Path, sizeof(Path)));
-            if (cdDelLast(Path) == -1)
-            {
-                //
-            }
-            
-            
-            if ((chdir(Path)<0))
-            {
-                printf("chdir failed\n");
-            }
-        }
-    }
-    
-
-    
-
-    if (words[1][0]=='/')
-    {
-        if (chdir(words[1])<0)
-        {
-            printf("chdir failed\n");
-        }
-        strcpy(prevPath, words[1]);
-    }
-
-
-    
-
-  if((words[1][0]=='-'))
-    {
-        memmove(words[1], words[1]+1, strlen(words[1]));
-        if ((chdir(prevPath)<0) && (chdir(words[1])<0))
-        {
-            printf("chdir failed\n");
-        }
-    }
-
-
-   
-    
-
-    
-    
-
-
-    return prevPath;
-    
-
-    //cd = chdir(retPath);
-
-
-    //printf("%s\n", Path);printf("%s\n", retPath);
-    
-}
-*/
 
 
 int main(){
@@ -469,10 +262,10 @@ int main(){
         //cd
         else if (strcmp(commands[curCommand].Name, "cd") == 0)
         {
-            //cd(char *path, int commandLen, char prevPath[100])
+            //cd(char *path, int size, char prevPath[100])
             char *currentJob[100];
-            int commandLen = getTokens(currentJob, commandInput);
-            cd(currentJob[1], commandLen, prevPath);
+            int size = getTokens(currentJob, commandInput);
+            cd(currentJob[1], size, prevPath);
 
             //strcpy(prevPath, cd(commands[curCommand], prevPath));
         }
@@ -482,7 +275,12 @@ int main(){
         }
         else
         {
-            pid_t pid = fork();
+            pid_t pid;
+            if ((pid = fork()) < 0)
+            {
+                printf("fork failed\n");
+            }
+             
             commands[curCommand].PidOfChild = pid;
             if (pid == 0)
             {
