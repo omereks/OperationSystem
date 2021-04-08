@@ -137,43 +137,56 @@ void builtIn(struct CommandStruct commands, char * str){
     
 }
 
-void cd(struct CommandStruct commands){
+int cdDelLast(char* word) {
+	int i = strlen(word)-1;
+    while (i>=0)
+    {
+        if (word[i] == '/') {
+			word[i] = '\0';
+			if(!strcmp(word,"")){
+				strcpy(word,"/");
+			}
+			return chdir(word);
+		}
+        i--;
+    }
+}
+
+char* cd(struct CommandStruct commands, char prevPath[100]){
     char Path[100];
-    char prevPath[100];
+    //char prevPath[100];
     char words[100][100];
+    char temp[100];
+    //strcpy(prevPath, pPath);
     splitString(commands.jobFullName ,words);
     if (strcmp(words[2],"\0"))
     {
         printf("Too many argument\n");
-        return;
+        return prevPath;
     }
 
-    if (strcmp(words[1],"\0") == 0)
+
+
+
+    //cd
+
+    if ((strcmp(words[1],"\0") == 0))
     {
-        if (chdir(getenv("HOME"))<0)
+        strcpy(prevPath, getcwd(Path, sizeof(Path)));
+        if ((chdir(getenv("HOME"))<0) && (strcmp("" , getenv("HOME")) != 0))
         {
             printf("chdir failed\n");
         }
-        strcpy(getenv("HOME"), prevPath);
     }
     
-    //if (chdir(getenv("HOME")) <0){
-      //  printf("chdir failed\n");
-    //}
 
-    if (getcwd(Path, sizeof(Path)) == NULL) 
-        printf("An error occurred\n");
-    
-    
-
-
-
+    // /
     if ((strcmp(words[1] , "/") == 0) || (strcmp(words[1] , "--") == 0))
     {
+        strcpy(prevPath, getcwd(Path, sizeof(Path)));
         if (chdir(getenv("HOME")) <0){
             printf("chdir failed\n");
         }
-        strcpy(getenv("HOME"), prevPath);
     }
 
     if (words[1][0]=='/')
@@ -182,16 +195,19 @@ void cd(struct CommandStruct commands){
         {
             printf("chdir failed\n");
         }
-        strcpy(words[1], prevPath);
+        strcpy(prevPath, words[1]);
     }
+
+
+    //~
 
     if ((strcmp(words[1] , "~") == 0) || (strcmp(words[1] , "~/") == 0))
     {
+        strcpy(prevPath, getcwd(Path, sizeof(Path)));
         if (chdir(getenv("HOME"))<0)
         {
             printf("chdir failed\n");
         }
-        strcpy(getenv("HOME"), prevPath);
     } else if (words[1][0]=='~')
     {
         memmove(words[1], words[1]+1, strlen(words[1]));
@@ -199,10 +215,22 @@ void cd(struct CommandStruct commands){
         {
             printf("chdir failed\n");
         }
-        strcpy(words[1], prevPath);
+        strcpy(prevPath, words[1]);
     }
 
-    if((words[1][0]=='-'))
+
+
+    //-
+    if((strcmp(words[1] , "-") == 0))
+    {
+        strcpy(temp, getcwd(Path, sizeof(Path)));
+        if ((chdir(prevPath)<0) && (strcmp(prevPath, getcwd(Path, sizeof(Path)))== 0))
+        {
+            printf("chdir failed\n");
+        }
+        strcpy(prevPath, temp);
+    }
+    else if((words[1][0]=='-'))
     {
         memmove(words[1], words[1]+1, strlen(words[1]));
         if ((chdir(prevPath)<0) && (chdir(words[1])<0))
@@ -211,11 +239,29 @@ void cd(struct CommandStruct commands){
         }
     }
 
+
+    // ..
+     if((strcmp(words[1] , "..") == 0))
+    {
+        strcpy(prevPath, getcwd(Path, sizeof(Path)));
+        if (cdDelLast(Path) == -1)
+        {
+            /* code */
+        }
+        
+        
+        if ((chdir(Path)<0))
+        {
+            printf("chdir failed\n");
+        }
+    }
+    
+
     
     
 
 
-    
+    return prevPath;
     
 
     //cd = chdir(retPath);
@@ -232,6 +278,7 @@ int main(){
     struct CommandStruct  commands[100];
     int curCommand = 0;
     char commandInput[100];
+    char prevPath[100];
 
     while (1)
     {
@@ -276,7 +323,7 @@ int main(){
         //cd
         else if (strcmp(commands[curCommand].Name, "cd") == 0)
         {
-            cd(commands[curCommand]);
+            strcpy(prevPath, cd(commands[curCommand], prevPath));
         }
         else if (strcmp(commands[curCommand].Name, "exit") == 0)
         {
