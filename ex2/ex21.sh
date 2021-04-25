@@ -28,3 +28,5 @@ do
     esac
 done
 
+cd ..
+
