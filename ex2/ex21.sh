@@ -5,7 +5,7 @@
 #paramtert $2 is file type
 #paramtert $3 is word
 
-#check if have 3 parameters
+#check if not have 3 parameters
 if test $# -le 2
 then
     echo "Not enough parameters"
@@ -13,18 +13,17 @@ then
 fi
 
 
-#get in the directory in $1
+#get in the directory $1
 cd $1
-#all the things in $1 directory sorted
+#sort dir
 DIR=$(ls | sort -V)
 
-#loop for printing the txt files
+#loop for all files
 for FILE in $DIR -v
 do
-    #in case that $FILE is file in kind of .$2
+    #in case that $FILE is file in type of .$2
     case $FILE in *.$2) 
         grep -iwh $3 $FILE
-        #awk  '/'"$3 -i"'/ {print}' $FILE
     esac
 done
 
