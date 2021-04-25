@@ -1,0 +1,17 @@
+Temp/
+.
+./1
+./1/temp1.txt
+./1/2
+./1/2/temp1.txt
+./1/2/3
+./1/2/3/temp1.txt
+./1/2/3/temp.txt
+./1/2/temp.txt
+./1/temp.txt
+./temp1.txt
+./original_filenames.txt
+./2
+./2/temp1.txt
+./2/temp.txt
+./temp.txt
